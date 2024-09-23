@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'CSS/style_auth.css' %}">
+
+
+<div class="wrapper">
+  <h2>Registration</h2>
+  <form action="{% url 'register' %}" method="post" id="registration-form">
+    {% csrf_token %}
+
+    {% if message %}
+    <div class="alert alert-{{class}}">
+      {{message}}
+    </div>
+    {% endif %}
+
+    <div class="input-box">
+      <input type="text" id="username" name="username" placeholder="Enter your username" required>
+    </div>
+    <div class="input-box">
+      <input type="text" id="email" name="email" placeholder="Enter your email" required>
+    </div>
+    <div class="input-box">
+      <input type="password" id="password" name="password" placeholder="Enter your password" required>
+    </div>
+    <div class="policy">
+      <h3>By continuing, you agree to Connection-FRIEND's <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.</h3>
+    </div>
+    <div class="input-box button">
+      <input type="Submit" value="CONTINUE">
+    </div>
+    <div class="text">
+      <h3>Existing User? <a href="{% url 'login-page' %}">Login now</a></h3>
+    </div>
+  </form>
+</div>
+
+
+
+
+<script>
+  $(document).ready(function(){
+    $('#registration-form').on('submit', function(e){
+      e.preventDefault();
+
+      let username = $('#username').val();
+      let email = $('#email').val();
+      let password = $('#password').val();
+
+      $.ajax({
+        url: '{% url "register" %}',
+        method: "POST",
+        data: {
+          'username': username,
+          'email': email,
+          'password': password,
+          'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response){
+          $('#message').text('Register successfull').removeClass('alert-danger').addClass('alert-success').show();
+          window.location.href = '/login-page/';
+        },
+        error: function(response){
+          $('#message').text('Error: ' + response.responseJSON.errors).removeClass('alert-success').addClass('alert-danger').show();
+        }
+      });
+    });
+  });
+</script>
+
+{% endblock %}

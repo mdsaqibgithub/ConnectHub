@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}All Users{% endblock %}
+
+{% block content %}
+<style>
+    .users-list-container {
+        width: 100%;
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    #user-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: start;
+    }
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 24px;
+        font-family: 'Arial', sans-serif;
+    }
+
+    .user-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+        /* width: 15%; */
+    }
+
+    .user-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: #ccc;
+        margin-bottom: 10px;
+    }
+
+    .user-info {
+        text-align: center;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .user-info .username {
+        font-weight: bold;
+        display: block;
+    }
+
+    .user-info .email {
+        font-size: 14px;
+        color: #888;
+    }
+
+    .send-request-btn {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        font-size: 14px;
+        margin-top: 10px;
+    }
+
+    .send-request-btn:hover {
+        background-color: #0056b3;
+    }
+
+    .send-request-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+
+    .error-message {
+        color: red;
+        font-size: 12px;
+        margin-top: 5px;
+        text-align: center;
+    }
+
+    .alert {
+        display: none;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+    }
+
+    .alert-success {
+        color: #3c763d;
+        background-color: #dff0d8;
+        border-color: #d6e9c6;
+    }
+
+    .alert-danger {
+        color: #a94442;
+        background-color: #f2dede;
+        border-color: #ebccd1;
+    }
+</style>
+
+<!-- Message Box for Success/Error -->
+<div id="message" class="alert"></div>
+
+<div class="users-list-container">
+    <h2>All Users</h2>
+    <ul id="user-list">
+        <!-- User list will be inserted here dynamically -->
+    </ul>
+    <p id="error-message" style="color: red; display: none;">An error occurred. Please try again.</p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const accessToken = localStorage.getItem('access_token');
+
+    // Fetch all users
+    fetch('/user_list/', {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + accessToken,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error('Unauthorized');
+        }
+    })
+    .then(data => {
+        console.log('User List:', data); // Log the fetched user list
+        const userList = document.getElementById('user-list');
+        userList.innerHTML = '';  // Clear existing users
+
+        data.forEach(user => {
+            const li = document.createElement('li');
+            li.classList.add('user-item');
+            li.innerHTML = `
+                <div class="user-avatar"></div>
+                <div class="user-info">
+                    <span class="username">${user.username}</span>
+                    <span class="email">${user.email}</span>
+                </div>
+                <div>
+                    <button class="send-request-btn" id="send-btn-${user.id}" onclick="sendFriendRequest(${user.id})">Send Request</button>
+                    <p class="error-message" id="error-msg-${user.id}" style="display: none;"></p>
+                </div>
+            `;
+            userList.appendChild(li);
+        });
+    })
+    .catch(error => {
+        console.error('Error fetching user list:', error);
+        document.getElementById('error-message').style.display = 'block';
+    });
+});
+
+// Function to send a friend request and update button status
+function sendFriendRequest(userId) {
+    const accessToken = localStorage.getItem('access_token');
+    const button = document.getElementById(`send-btn-${userId}`);
+    const errorMessage = document.getElementById(`error-msg-${userId}`);
+
+    // Disable button and change its text to indicate processing
+    button.textContent = 'Sending...';
+    button.disabled = true;
+
+    fetch(`/friend_request/${userId}/`, {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + accessToken,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Friend Request Response:', data); // Log the API response
+
+        if (data.success) {
+            // Update the button to indicate request was sent
+            button.textContent = 'Request Sent';
+            button.disabled = true;
+
+            // Show success message
+            showMessage('Friend request sent successfully!', 'success');
+        } else {
+            const apiErrorMessage = data.detail || 'Error sending friend request';
+            errorMessage.style.display = 'block';
+
+            // Re-enable button if there was an error
+            button.textContent = 'Send Request';
+            button.disabled = false;
+
+            // Show error message in message box
+            showMessage(apiErrorMessage, 'danger');
+        }
+    })
+    .catch(error => {
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.style.display = 'block';
+        
+        // Re-enable button if there was an error
+        button.textContent = 'Send Request';
+        button.disabled = false;
+
+        // Show error message
+        showMessage('An error occurred. Please try again.', 'danger');
+    });
+}
+
+// Function to show messages (success/error)
+function showMessage(message, type) {
+    console.log('Show Message:', message); // Log the message being shown
+    const messageBox = document.getElementById('message');
+    messageBox.textContent = message;
+    messageBox.className = `alert alert-${type}`;
+    messageBox.style.display = 'block';
+    
+    // Hide the message after 3 seconds
+    setTimeout(() => {
+        messageBox.style.display = 'none';
+    }, 3000);
+}
+
+
+</script>
+
+{% endblock %}

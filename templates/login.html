@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'CSS/style_auth.css' %}">
+<style>
+    .alert {
+        padding: 15px;
+        margin-top: 10px;
+        border-radius: 5px;
+        display: none;
+    }
+    .alert-success {
+        background-color: #dff0d8;
+        color: #3c763d;
+    }
+    .alert-danger {
+        background-color: #f2dede;
+        color: #a94442;
+    }
+</style>
+<div class="wrapper">
+    <h2>Login</h2>
+    <form action="#" method="post" id="login-form">
+        {% csrf_token %}
+        <div class="input-box">
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+        </div>
+        <div class="input-box">
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        </div>
+        <div class="policy">
+            <h3>By continuing, you agree to Connection-FRIEND's <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.</h3>
+        </div>
+        <div class="input-box button">
+            <input type="button" value="Login" id="login-button">
+        </div>
+        <div class="text">
+            <h3>New to Connection-FRIEND? <a href="{% url 'signup-page' %}">Create an account</a></h3>
+        </div>
+    </form>
+    <div id="message" class="alert"></div>
+</div>
+
+<script>
+document.getElementById('login-button').addEventListener('click', function (event) {
+    event.preventDefault();
+
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    const data = {
+        email: email,
+        password: password,
+    };
+
+    fetch('/login/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.tokens) {
+            document.getElementById('message').style.display = 'block';
+            document.getElementById('message').innerHTML = 'Login successful! Redirecting...';
+            document.getElementById('message').className = 'alert alert-success';
+
+            localStorage.setItem('access_token', result.tokens.access);
+            localStorage.setItem('username', result.user.username);
+            localStorage.setItem('refresh_token', result.tokens.refresh);
+
+            setTimeout(() => {
+                window.location.href = '/friend_list/';
+            }, 1000);
+        } else {
+            document.getElementById('message').style.display = 'block';
+            document.getElementById('message').innerHTML = result.details || 'Login failed';
+            document.getElementById('message').className = 'alert alert-danger';
+        }
+    })
+    .catch(error => {
+        document.getElementById('message').style.display = 'block';
+        document.getElementById('message').innerHTML = 'An error occurred. Please try again.';
+        document.getElementById('message').className = 'alert alert-danger';
+    });
+});
+</script>
+
+{% endblock %}

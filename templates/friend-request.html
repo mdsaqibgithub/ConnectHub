@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Friend Requests{% endblock %}
+
+{% block content %}
+<style>
+    .friend-requests-container {
+        width: 100%;
+        margin: 50px auto;
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    #request-list {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: start;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 24px;
+        font-family: 'Arial', sans-serif;
+    }
+
+    .request-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+    }
+
+    .request-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .request-info {
+        text-align: center;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .request-info .username {
+        font-weight: bold;
+        display: block;
+    }
+
+    .buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .accept-btn, .reject-btn {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        font-size: 14px;
+    }
+
+    .accept-btn:hover {
+        background-color: #0056b3;
+    }
+
+    .reject-btn {
+        background-color: #f44336;
+    }
+
+    .reject-btn:hover {
+        background-color: #c62828;
+    }
+
+    #no-requests-message, #error-message {
+        text-align: center;
+        color: #ff5722;
+    }
+</style>
+
+<div class="friend-requests-container">
+    <h2>Friend Requests</h2>
+    <ul id="request-list">
+        <!-- Friend requests will be inserted here dynamically -->
+    </ul>
+    <p id="no-requests-message" style="display: none;">You have no pending friend requests.</p>
+    <p id="error-message" style="color: red; display: none;">An error occurred. Please try logging in again.</p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const accessToken = localStorage.getItem('access_token');
+    
+    // Fetch pending friend requests
+    fetch('/friend_request_list/', {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + accessToken,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error('Unauthorized');
+        }
+    })
+    .then(data => {
+        const requestList = document.getElementById('request-list');
+        const noRequestsMessage = document.getElementById('no-requests-message');
+
+        requestList.innerHTML = '';
+
+        if (data.length === 0) {
+            noRequestsMessage.style.display = 'block';
+        } else {
+            noRequestsMessage.style.display = 'none';
+            data.forEach(request => {
+                const li = document.createElement('li');
+                li.classList.add('request-item');
+                li.innerHTML = `
+                    <div class="request-info">
+                        <span class="username">${request.from_user}</span>
+                        <span>Sent at ${new Date(request.sent_at).toLocaleString()}</span>
+                    </div>
+                    <div class="buttons">
+                        <button class="accept-btn" onclick="handleFriendRequest(${request.request_id}, 'accept')">Accept</button>
+                        <button class="reject-btn" onclick="handleFriendRequest(${request.request_id}, 'reject')">Reject</button>
+                    </div>
+                `;
+                requestList.appendChild(li);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching friend requests:', error);
+        document.getElementById('error-message').style.display = 'block';
+    });
+});
+
+// Handle friend request (accept/reject)
+function handleFriendRequest(requestId, action) {
+    const accessToken = localStorage.getItem('access_token');
+    
+    fetch(`/requests/${requestId}/${action}/`, {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + accessToken,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            alert(`Friend request ${action}ed successfully.`);
+            location.reload();  // Reload the page to update the list
+        } else {
+            throw new Error('Action failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error handling friend request:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+</script>
+
+{% endblock %}

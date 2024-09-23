@@ -1,0 +1,248 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Connection-FRIEND</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        /* Main content styling */
+        main {
+            margin-top: 50px; /* Space for fixed navbar */
+            padding: 20px; /* Padding around the main content */
+        }
+        /* Navbar styling */
+        .navbar {
+            background-color: #333; /* Dark background color */
+            color: #000000; /* White text color */
+            padding: 15px 20px; /* Padding around the navbar */
+            position: fixed; /* Fixed positioning */
+            top: 0; /* Align to the top */
+            width: 100%; /* Full width */
+            z-index: 1000; /* Ensure it's on top */
+            left: 0; /* Ensure it is aligned to the left */
+        }
+        .navbar .container {
+            display: flex; /* Flexbox for layout */
+            justify-content: space-between; /* Space between items */
+            align-items: center; /* Center items vertically */
+            max-width: 1200px; /* Max width of the container */
+            margin: 0 auto; /* Center align */
+        }
+        .navbar .logo {
+            font-size: 24px; /* Logo text size */
+            color: #fff; /* Logo text color */
+            text-decoration: none; /* Remove underline */
+        }
+        .nav-links {
+            list-style: none; /* Remove list styling */
+            margin: 0; /* Remove margin */
+            padding: 0; /* Remove padding */
+            display: flex; /* Flexbox for horizontal layout */
+        }
+        .nav-links li {
+            margin: 11px 15px; /* Spacing between nav items */
+        }
+        .nav-links a {
+            color: #fff; /* Link color */
+            text-decoration: none; /* Remove underline */
+            font-size: 16px; /* Link text size */
+            padding: 8px 12px; /* Padding around the link */
+            border-radius: 4px; /* Rounded corners */
+            transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover effect */
+        }
+        .nav-links a:hover {
+            background-color: #555; /* Darker background on hover */
+            color: #ddd; /* Lighter text color on hover */
+        }
+        .auth-links a {
+            color: #fff; /* Auth link color */
+            text-decoration: none; /* Remove underline */
+            margin-left: 10px; /* Space between auth links */
+            padding: 8px 12px; /* Padding around the link */
+            border-radius: 4px; /* Rounded corners */
+        }
+        .auth-links a:hover {
+            background-color: #555; /* Darker background on hover */
+            color: #ddd; /* Lighter text color on hover */
+        }
+        .logout-btn {
+            color: #fff; /* Text color */
+            text-decoration: none; /* Remove underline */
+            padding: 8px 12px; /* Padding around the button */
+            border-radius: 4px; /* Rounded corners */
+            background-color: #dc3545; /* Bootstrap's danger color */
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+        .logout-btn:hover {
+            background-color: #c82333; /* Darker shade on hover */
+        }
+
+        .sign-btn{
+            color: #fff; /* Text color */
+            text-decoration: none; /* Remove underline */
+            padding: 8px 12px; /* Padding around the button */
+            border-radius: 4px; /* Rounded corners */
+            background-color: #4070f4; /* Bootstrap's danger color */
+            transition: background-color 0.3s; /* Smooth transition */
+
+        }
+        .sign-btn:hover {
+            background-color: #c82333; /* Darker shade on hover */
+        }
+        .search-container {
+            position: relative; /* Position relative for dropdown placement */
+            display: flex;
+            justify-content: center;
+        }
+        #search-input {
+            width: 250px; /* Adjust width */
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 25px; /* Rounded corners */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease; /* Smooth transition */
+        }
+        #search-input:focus {
+            border-color: #5cb85c; /* Change border color on focus */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Deeper shadow */
+        }
+        .search-results {
+            position: absolute;
+            top: 50px; /* Position just below the search bar */
+            left: 0;
+            width: 100%; /* Match the input width */
+            background-color: white; /* White background */
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 1000; /* Ensure it's on top */
+            display: none; /* Hide by default */
+        }
+        .result-card {
+            padding: 12px;
+            cursor: pointer; /* Change cursor to pointer */
+            transition: background-color 0.3s; /* Smooth background change */
+        }
+        .result-card:hover {
+            background-color: #f1f1f1; /* Highlight on hover */
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="{% url 'signup-page' %}" class="logo">ConnectHub</a>
+               
+                
+                <ul class="nav-links">
+                    <li><a href="{% url 'all_users' %}">Users</a></li>
+                    <li><a href="{% url 'friends_request' %}">Requests</a></li>
+                    <li><a href="{% url 'friend_list' %}">Friends</a></li>
+                </ul>
+                <div class="search-container nav-links">
+                    <input type="text" id="search-input" placeholder="Search users by name or email..." autocomplete="off" />
+                    <div id="search-results" class="search-results"></div>
+                </div>
+                <div class="auth-links">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+                    {% else %}
+                        <a href="{% url 'signup-page' %}" class="sign-btn">Sign Up</a>
+                    {% endif %}
+                </div>                
+            </div>
+        </nav>
+    </header>
+    <main>
+        {% block content %}
+        
+        {% endblock %}
+    </main>
+
+    <script>
+        $(document).ready(function() {
+            // Check if the user is authenticated based on the presence of tokens
+            const accessToken = localStorage.getItem('access_token');
+            const username = localStorage.getItem('username'); // Store username on login
+            
+            if (accessToken) {
+                // User is logged in
+                $('.auth-links').html(`
+                    <a href="{% url 'logout' %}" class="logout-btn">Logout ${username}</a>
+                `);
+                $('.nav-links').show(); // Show navigation links
+            } else {
+                // User is not logged in
+                $('.auth-links').html(`
+                    <a href="{% url 'signup-page' %}" class="sign-btn">Sign Up</a>
+                `);
+                $('.nav-links').hide(); // Hide navigation links
+            }
+
+            // Logout functionality
+            $(document).on('click', '.logout-btn', function(event) {
+                event.preventDefault();
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('username');
+                window.location.href = '/'; // Redirect to home page or login page
+            });
+        });
+
+
+        $(document).ready(function() {
+            let timeout = null;
+
+            $('#search-input').on('input', function() {
+                clearTimeout(timeout);
+                const query = $(this).val();
+                const accessToken = localStorage.getItem('access_token');
+
+                if (query.length > 0) {
+                    timeout = setTimeout(() => {
+                        $.ajax({
+                            url: `/search/?search=${query}`,
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`
+                            },
+                            success: function(data) {
+                                const resultsContainer = $('#search-results');
+                                resultsContainer.empty();
+                                if (data.results.length > 0) {
+                                    data.results.forEach(user => {
+                                        resultsContainer.append(`<div class="result-card">${user.username} (${user.email})</div>`);
+                                    });
+                                    resultsContainer.show();
+                                } else {
+                                    resultsContainer.hide();
+                                }
+                            },
+                            error: function(xhr) {
+                                if (xhr.status === 401) {
+                                    console.log('Authentication error: ', xhr.responseJSON.detail);
+                                } else {
+                                    console.log('An error occurred: ', xhr.responseText);
+                                }
+                            }
+                        });
+                    }, 300); // 300ms debounce
+                } else {
+                    $('#search-results').hide();
+                }
+            });
+
+            $(document).on('click', function(event) {
+                if (!$(event.target).closest('.search-container').length) {
+                    $('#search-results').hide(); // Hide results when clicking outside
+                }
+            });
+        });
+    </script>
+</body>
+</html>

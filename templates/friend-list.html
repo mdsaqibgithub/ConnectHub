@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Friends List{% endblock %}
+
+{% block content %}
+<style>
+    .friends-list-container {
+        width: 100%;
+        margin: 50px auto;
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    #friend-list {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: start;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 24px;
+        font-family: 'Arial', sans-serif;
+    }
+
+    .friend-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+    }
+
+    .friend-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .friend-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: #ccc;
+        margin-bottom: 10px;
+    }
+
+    .friend-info {
+        text-align: center;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .friend-info .username {
+        font-weight: bold;
+        display: block;
+    }
+
+    #no-friends-message, #error-message {
+        text-align: center;
+        color: #ff5722;
+    }
+</style>
+
+<div class="friends-list-container">
+    <h2>Your Friends</h2>
+    <ul id="friend-list">
+        <!-- Friends will be inserted here dynamically -->
+    </ul>
+    <p id="no-friends-message" style="display: none;">You have no friends yet.</p>
+    <p id="error-message" style="color: red; display: none;">An error occurred. Please try logging in again.</p>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const accessToken = localStorage.getItem('access_token');
+        fetch('/friends/', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + accessToken,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Unauthorized');
+            }
+        })
+        .then(data => {
+            const friendList = document.getElementById('friend-list');
+            const noFriendsMessage = document.getElementById('no-friends-message');
+
+            // Clear any existing friends
+            friendList.innerHTML = '';
+
+            if (data.length === 0) {
+                noFriendsMessage.style.display = 'block';
+            } else {
+                noFriendsMessage.style.display = 'none';
+                data.forEach(friend => {
+                    const li = document.createElement('li');
+                    li.classList.add('friend-item');
+                    li.innerHTML = `
+                        <div class="friend-avatar"></div>
+                        <div class="friend-info">
+                            <span class="username">${friend.username}</span>
+                            <span class="email">${friend.email}</span>
+                        </div>
+                    `;
+                    friendList.appendChild(li);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching friend list:', error);
+            document.getElementById('error-message').style.display = 'block';
+        });
+    });
+</script>
+
+{% endblock %}
