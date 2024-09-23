@@ -12,6 +12,13 @@ ConnectHub is a social networking application built using Django Rest Framework.
 - Pending Friend Requests: View a list of received friend requests.
 - Throttling: Limit sending friend requests to 3 requests per minute.
 
+## API Documentation
+
+You can test the API endpoints using the Postman collection provided below:
+
+[Postman Collection Link](<https://documenter.getpostman.com/view/30524059/2sAXqv3fYw>)
+
+
 ## Requirements
 
 - Python 3.x
